@@ -1,6 +1,8 @@
 # NeuroGenX
 # NeuroGenX — AI that evolves itself
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Naman20101/NeuroGenX/blob/main/NeuroGenX_Starter.ipynb)
+
 > **Tagline:** "AI that builds smarter AIs."
 
 NeuroGenX is an experimental, next-generation AI framework designed to **automatically generate, test, and improve its own AI agents** — enabling rapid evolution of capabilities without manual coding for each update.
