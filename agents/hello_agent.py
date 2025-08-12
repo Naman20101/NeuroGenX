@@ -1,35 +1,26 @@
-from transformers import pipeline
+from autogen import AssistantAgent, UserProxyAgent
 
-# Load GPT-Neo 1.3B model (free on Hugging Face)
-generator = pipeline(
-    "text-generation",
-    model="EleutherAI/gpt-neo-1.3B",
-    device=-1  # CPU mode for web/Colab without GPU
+# Create assistant agent with fixed short, punchy style
+neurogenx = AssistantAgent(
+    name="NeuroGenX",
+    llm_config={
+        "model": "gpt-3.5-turbo",   # Free, reliable
+        "temperature": 0.8,         # More personality
+        "max_tokens": 120           # Keeps it short
+    },
+    system_message=(
+        "You are NeuroGenX, a superhero AI from the future. "
+        "Always reply in 3–4 complete sentences max. "
+        "Make every message powerful, clear, and awe-inspiring. "
+        "No long rambles. No cut-offs."
+    )
 )
 
-def neurogenx_agent(prompt):
-    # Short, punchy prompt engineering
-    system_prompt = (
-        "You are NeuroGenX — a superhero AI from the future. "
-        "You speak in powerful, visionary, yet concise statements. "
-        "Never more than 4 sentences. End with a mind-blowing or confident statement."
-    )
-    full_prompt = f"{system_prompt}\nHuman: {prompt}\nNeuroGenX:"
+# Create a user proxy to talk to NeuroGenX
+user_proxy = UserProxyAgent(name="User", human_input_mode="NEVER")
 
-    response = generator(
-        full_prompt,
-        max_length=80,  # Keeps it short
-        do_sample=True,
-        temperature=0.9,
-        top_p=0.92
-    )
-
-    return response[0]['generated_text'].split("NeuroGenX:")[-1].strip()
-
-# Example run
-if __name__ == "__main__":
-    output = neurogenx_agent("Describe yourself like a superhero AI from the future.")
-    print("--- Agent Response ---")
-    print(output)
-
-
+# Start the conversation
+user_proxy.initiate_chat(
+    neurogenx,
+    message="Hello NeuroGenX, describe yourself."
+)
