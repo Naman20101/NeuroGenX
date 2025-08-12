@@ -21,3 +21,44 @@ To create an autonomous AI ecosystem where intelligent agents **continuously lea
 ---
 
 ## 📂 Repository Structure
+NeuroGenX/
+├── agents/ # Individual AI agent definitions
+├── core/ # Core logic and orchestration
+├── notebooks/ # Prototypes, experiments, and research
+├── ui/ # Web-based interface components
+├── docs/ # Project documentation
+├── requirements.txt
+├── README.md
+
+yaml
+Copy
+Edit
+
+---
+
+## 🛠️ Tech Stack (Planned)
+- **Language:** Python 3.10+
+- **Core AI:** PyTorch / Transformers
+- **Interface:** React + FastAPI
+- **Deployment:** Docker + Cloud (AWS/GCP)
+- **Collaboration:** GitHub + Google Colab
+
+---
+
+## 📅 Development Timeline
+**Month 1:** Setup repo, architecture, and initial self-improving agent prototype.  
+**Month 2:** Add multi-agent collaboration + basic UI.  
+**Month 3:** Optimize, deploy, and integrate APIs.
+
+---
+
+## 🤝 Contributing
+This is a **visionary AI project**. If you’re a developer, researcher, or investor interested in pushing boundaries, open an issue or reach out.
+
+Email:---:Namanreddy24@gmail.com
+
+## ⚠️ Disclaimer
+This project is in early development and experimental. Use with caution.
+
+---
+
