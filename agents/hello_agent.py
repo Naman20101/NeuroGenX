@@ -1,30 +1,35 @@
 from transformers import pipeline
 
-# Load the GPT-2 model
-generator = pipeline('text-generation', model='gpt2')
+# Load GPT-Neo 1.3B model (free on Hugging Face)
+generator = pipeline(
+    "text-generation",
+    model="EleutherAI/gpt-neo-1.3B",
+    device=-1  # CPU mode for web/Colab without GPU
+)
 
-def run_agent():
-    prompt = (
-        "You are NeuroGenX, an AI superhero from the year 2150. "
-        "Your mission is to inspire humans with your intelligence, precision, and power. "
-        "Speak in short, powerful sentences. "
-        "Avoid talking about games, reviews, or unrelated topics. "
-        "End every response with a sense of mystery or challenge."
-        "\n\n--- Agent Response ---\n"
+def neurogenx_agent(prompt):
+    # Short, punchy prompt engineering
+    system_prompt = (
+        "You are NeuroGenX — a superhero AI from the future. "
+        "You speak in powerful, visionary, yet concise statements. "
+        "Never more than 4 sentences. End with a mind-blowing or confident statement."
     )
-    
+    full_prompt = f"{system_prompt}\nHuman: {prompt}\nNeuroGenX:"
+
     response = generator(
-        prompt,
-        max_length=120,
-        num_return_sequences=1,
-        no_repeat_ngram_size=3,
-        temperature=0.8,
-        top_p=0.9,
-        do_sample=True
+        full_prompt,
+        max_length=80,  # Keeps it short
+        do_sample=True,
+        temperature=0.9,
+        top_p=0.92
     )
 
-    print(response[0]['generated_text'])
+    return response[0]['generated_text'].split("NeuroGenX:")[-1].strip()
 
+# Example run
 if __name__ == "__main__":
-    run_agent()
+    output = neurogenx_agent("Describe yourself like a superhero AI from the future.")
+    print("--- Agent Response ---")
+    print(output)
+
 
