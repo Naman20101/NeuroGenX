@@ -1,1 +1,9 @@
+torch
+transformers
+langchain
+pandas
+numpy
+scikit-learn
+fastapi
+uvicorn
 
