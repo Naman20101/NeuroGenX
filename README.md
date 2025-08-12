@@ -1,7 +1,6 @@
 # NeuroGenX
 # NeuroGenX — AI that evolves itself
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Naman20101/NeuroGenX/blob/main/NeuroGenX_Starter.ipynb)
 
 > **Tagline:** "AI that builds smarter AIs."
 
