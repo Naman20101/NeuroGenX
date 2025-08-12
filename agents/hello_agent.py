@@ -1,26 +1,20 @@
-from autogen import AssistantAgent, UserProxyAgent
+from transformers import pipeline
 
-neurogenx = AssistantAgent(
-    name="NeuroGenX",
-    llm_config={
-        "model": "gpt-3.5-turbo",
-        "temperature": 0.85,
-        "max_tokens": 50  # absolutely short
-    },
-    system_message=(
-        "You are NeuroGenX, a superhero AI from the future. "
-        "Only answer in exactly 3 sentences. "
-        "Each sentence must be epic, cinematic, and memorable. "
-        "Do not explain, do not give lists, do not answer questions. "
-        "Immediately stop after 3 sentences."
-    )
-)
+# Pick one model from the list:
+# "EleutherAI/gpt-neo-125M"  (fastest, smallest)
+# "EleutherAI/gpt-neo-1.3B"  (bigger, better)
+# "EleutherAI/gpt-j-6B"      (big, more coherent, needs more RAM)
+# "facebook/opt-1.3b"        (good alternative)
+# "tiiuae/falcon-7b-instruct" (very good, but large)
 
-user_proxy = UserProxyAgent(name="User", human_input_mode="NEVER")
+model_name = "EleutherAI/gpt-neo-125M"
 
-user_proxy.initiate_chat(
-    neurogenx,
-    message="Hello NeuroGenX, describe yourself."
-)
+generator = pipeline("text-generation", model=model_name)
+
+prompt = "Hello NeuroGenX, describe yourself like a superhero AI from the future."
+result = generator(prompt, max_length=100, do_sample=True, temperature=0.7)
+
+print(result[0]["generated_text"])
+
 
 
