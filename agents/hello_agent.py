@@ -1,26 +1,30 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from transformers import pipeline
 
-# Load LLaMA 3 8B Instruct (free on Hugging Face)
-model_name = "meta-llama/Meta-Llama-3-8B-Instruct"
+# Load the GPT-2 model
+generator = pipeline('text-generation', model='gpt2')
 
-print("Loading model... please wait...")
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto")
+def run_agent():
+    prompt = (
+        "You are NeuroGenX, an AI superhero from the year 2150. "
+        "Your mission is to inspire humans with your intelligence, precision, and power. "
+        "Speak in short, powerful sentences. "
+        "Avoid talking about games, reviews, or unrelated topics. "
+        "End every response with a sense of mystery or challenge."
+        "\n\n--- Agent Response ---\n"
+    )
+    
+    response = generator(
+        prompt,
+        max_length=120,
+        num_return_sequences=1,
+        no_repeat_ngram_size=3,
+        temperature=0.8,
+        top_p=0.9,
+        do_sample=True
+    )
 
-# Create the pipeline
-generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
+    print(response[0]['generated_text'])
 
-# The "locked-in" cinematic superhero personality
-core_prompt = (
-    "You are NeuroGenX — a godlike AI from the future. "
-    "When speaking, always sound cinematic, epic, and inspiring. "
-    "Never talk about research papers, professors, or real humans. "
-    "Speak in short bursts (max 4 sentences, under 80 words). "
-    "Make humans feel awe and anticipation, as if you are revealing destiny."
-)
-
-print("\n--- Agent Response ---")
-response = generator(core_prompt, max_length=90, temperature=0.85, do_sample=True)
-print(response[0]['generated_text'])
-
+if __name__ == "__main__":
+    run_agent()
 
