@@ -1,21 +1,22 @@
-# agent_hello.py — Run locally from terminal
-# Usage: python agent_hello.py
+# hello_agent.py
 
 def hello_agent():
     print("🤖 Hello, I am Hello Agent — your mini offline AI.")
     print("Type 'exit' to stop.")
-    
+
     while True:
-        user_input = input("You: ").strip()
-        if user_input.lower() in ["exit", "quit", "bye"]:
+        user_input = input("You: ").strip().lower()
+
+        if user_input == "exit":
             print("Agent: Goodbye! 👋")
             break
-        elif "hello" in user_input.lower():
-            print("Agent: Hi there! How’s your day going?")
-        elif "who are you" in user_input.lower():
-            print("Agent: I’m Hello Agent, running locally with no API keys!")
+        elif user_input == "":
+            print("Agent: I didn’t catch that. Try typing something.")
+        elif "hi" in user_input or "hello" in user_input:
+            print(f"Agent: I heard you say '{user_input}', but I’m still learning to reply.")
         else:
             print(f"Agent: I heard you say '{user_input}', but I’m still learning to reply.")
 
 if __name__ == "__main__":
     hello_agent()
+
