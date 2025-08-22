@@ -1,17 +1,18 @@
 {
-  "name": "render-backend",
+  "name": "neurogenx-api",
   "version": "1.0.0",
-  "description": "A simple Express.js backend for Render deployment.",
+  "description": "A simple Node.js API with Express",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.18.2"
-  }
+    "express": "^4.19.2",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0"
+  },
+  "files": [
+    "server.js",
+    "swagger.yaml"
+  ]
 }
