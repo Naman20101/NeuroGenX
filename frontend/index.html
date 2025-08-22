@@ -186,7 +186,6 @@
                 welcomeMessage.textContent = `Welcome, ${username}!`;
                 fetchMessages();
                 
-                // Connect to Socket.IO only after authentication
                 socket = io(BACKEND_URL);
                 socket.on('new_message', (msg) => {
                     messagesList.prepend(formatAndRenderMessage(msg));
@@ -197,11 +196,10 @@
                 authContainer.classList.remove('hidden');
                 chatContainer.classList.add('hidden');
                 if (socket) {
-                    socket.disconnect(); // Disconnect socket when logging out
+                    socket.disconnect();
                 }
             }
 
-            // Check for existing token on page load
             const token = localStorage.getItem('token');
             const username = localStorage.getItem('username');
             if (token && username) {
@@ -210,7 +208,6 @@
                 showAuthUI();
             }
 
-            // Event listeners for login/register forms
             loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const username = loginUsername.value;
@@ -251,7 +248,7 @@
                     const data = await response.json();
                     if (response.ok) {
                         alert('Registration successful! You can now log in.');
-                        showLoginBtn.click(); // Switch to login form
+                        showLoginBtn.click();
                         registerForm.reset();
                     } else {
                         alert(data.error || 'Registration failed.');
@@ -262,7 +259,6 @@
                 }
             });
 
-            // Handle message submission
             messageForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const message = messageInput.value;
@@ -295,14 +291,12 @@
                 }
             });
 
-            // Logout functionality
             logoutButton.addEventListener('click', () => {
                 localStorage.removeItem('token');
                 localStorage.removeItem('username');
                 showAuthUI();
             });
 
-            // Switch between login and register forms
             showRegisterBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 loginFormContainer.classList.add('hidden');
