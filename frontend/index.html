@@ -3,20 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuroGenX-AI</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Neurogenx API Client</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            @apply bg-gray-900 text-gray-200;
+            background-color: #f3f4f6;
         }
     </style>
 </head>
-<body>
-    <div id="root"></div>
-    <script type="module" src="/src/App.jsx"></script>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl m-4">
+        <!-- Main heading for the page -->
+        <h1 class="text-3xl font-bold text-gray-900 mb-6 text-center">Neurogenx Message Board</h1>
+        <p class="text-gray-600 text-center mb-8">This client interacts with your deployed API. Submit a message below and see it appear instantly!</p>
+
+        <!-- Form for submitting a new message -->
+        <form id="messageForm" class="space-y-4">
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700">Your Name</label>
+                <input type="text" id="name" name="name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <label for="message" class="block text-sm font-medium text-gray-700">Your Message</label>
+                <textarea id="message" name="message" rows="3" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+            </div>
+            <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Submit Message
+            </button>
+        </form>
+
+        <!-- Section to display messages -->
+        <div class="mt-8">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4 text-center">Messages</h2>
+            <div id="messagesList" class="space-y-4">
+                <!-- Messages will be injected here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // URL of your deployed Neurogenx API on Render
+        const API_URL = 'https://neurogenx.onrender.com';
+        const messagesList = document.getElementById('messagesList');
+        const messageForm = document.getElementById('messageForm');
+
+        /**
+         * Fetches all messages from the API and renders them on the page.
+         */
+        async function fetchMessages() {
+            try {
+                const response = await fetch(`${API_URL}/api/messages`);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const messages = await response.json();
+                renderMessages(messages);
+            } catch (error) {
+                console.error('Error fetching messages:', error);
+                messagesList.innerHTML = `<p class="text-red-500 text-center">Failed to load messages. Please check the console for details.</p>`;
+            }
+        }
+
+        /**
+         * Renders an array of message objects to the DOM.
+         * @param {Array<Object>} messages - The array of messages to render.
+         */
+        function renderMessages(messages) {
+            messagesList.innerHTML = '';
+            if (messages.length === 0) {
+                messagesList.innerHTML = `<p class="text-gray-500 text-center">No messages yet. Be the first to post!</p>`;
+                return;
+            }
+            
+            messages.forEach(msg => {
+                const messageCard = document.createElement('div');
+                messageCard.className = 'bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200';
+                messageCard.innerHTML = `
+                    <p class="font-bold text-indigo-600">${msg.name}</p>
+                    <p class="mt-1 text-gray-800">${msg.message}</p>
+                    <p class="mt-2 text-sm text-gray-400">${new Date(msg.date).toLocaleString()}</p>
+                `;
+                messagesList.appendChild(messageCard);
+            });
+        }
+
+        /**
+         * Handles the form submission to send a new message to the API.
+         * @param {Event} event - The form submission event.
+         */
+        messageForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const message = document.getElementById('message').value;
+
+            try {
+                const response = await fetch(`${API_URL}/api/submit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, message }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to submit message');
+                }
+
+                // If successful, re-fetch all messages to update the list
+                await fetchMessages();
+                messageForm.reset(); // Clear the form
+            } catch (error) {
+                console.error('Error submitting message:', error);
+                alert('Failed to submit message. Please try again.');
+            }
+        });
+
+        // Fetch messages when the page loads
+        document.addEventListener('DOMContentLoaded', fetchMessages);
+    </script>
 </body>
 </html>
