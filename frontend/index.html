@@ -50,6 +50,14 @@
             border-radius: 10px;
             border: 2px solid #e2e8f0;
         }
+        /* Keyframe animation for new messages */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4 md:p-8">
@@ -73,22 +81,55 @@
                 <!-- Messages will be dynamically loaded here -->
             </div>
         </div>
-
+        
+        <!-- Socket.IO client library -->
+        <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+        
         <script>
             // Replace with your actual Render backend URL
             const BACKEND_URL = "https://neurogenx.onrender.com";
             
+            // Connect to the Socket.IO server on your backend
+            const socket = io(BACKEND_URL);
+
             const messageForm = document.getElementById('messageForm');
             const messagesList = document.getElementById('messagesList');
             const nameInput = document.getElementById('name');
             const messageInput = document.getElementById('message');
 
             /**
-             * Asynchronously fetches messages from the backend API and renders them.
-             * This function sends a GET request to the backend's /api/messages endpoint.
-             * It handles the response, parses it as JSON, and then renders the messages
-             * onto the webpage. If an error occurs, it logs the error to the console
-             * and displays a user-friendly error message on the page.
+             * Renders a single message element to the DOM.
+             * @param {Object} msg - The message object to render.
+             */
+            function renderMessage(msg) {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message-card bg-white p-4 rounded-xl shadow-sm border border-gray-200 fade-in';
+                
+                let formattedDate = 'Date Unavailable';
+                const date = new Date(msg.timestamp);
+                if (!isNaN(date.getTime())) {
+                    formattedDate = date.toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: 'numeric',
+                        hour12: true
+                    });
+                }
+
+                messageElement.innerHTML = `
+                    <p class="font-semibold text-gray-900">${msg.name}</p>
+                    <p class="text-gray-700 mt-2">${msg.message}</p>
+                    <p class="text-xs text-gray-400 mt-2">${formattedDate}</p>
+                `;
+                return messageElement;
+            }
+
+            /**
+             * Asynchronously fetches messages from the backend API.
+             * This function sends a GET request to the backend's /api/messages endpoint
+             * to load all historical messages on page load.
              */
             async function fetchMessages() {
                 try {
@@ -105,29 +146,7 @@
                     }
                     
                     messages.forEach(msg => {
-                        const messageElement = document.createElement('div');
-                        messageElement.className = 'message-card bg-white p-4 rounded-xl shadow-sm border border-gray-200 animate-fade-in';
-                        
-                        let formattedDate = 'Date Unavailable';
-                        // Use a custom function to check if the date is valid and format it
-                        const date = new Date(msg.timestamp);
-                        if (!isNaN(date.getTime())) {
-                            formattedDate = date.toLocaleString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: 'numeric',
-                                minute: 'numeric',
-                                hour12: true
-                            });
-                        }
-
-                        messageElement.innerHTML = `
-                            <p class="font-semibold text-gray-900">${msg.name}</p>
-                            <p class="text-gray-700 mt-2">${msg.message}</p>
-                            <p class="text-xs text-gray-400 mt-2">${formattedDate}</p>
-                        `;
-                        messagesList.appendChild(messageElement);
+                        messagesList.appendChild(renderMessage(msg));
                     });
                 } catch (error) {
                     console.error('Error retrieving messages:', error);
@@ -137,16 +156,10 @@
 
             /**
              * Handles the form submission to send a new message.
-             * This function prevents the default form submission, creates a message object
-             * from the form input, and sends it to the backend via a POST request.
-             * Upon successful submission, it logs a success message, clears the input,
-             * and calls fetchMessages() to update the list on the page. It includes
-             * robust error handling to notify the user if the submission fails.
-             *
-             * @param {Event} event The form submission event.
+             * Upon successful submission, it clears the input.
              */
             messageForm.addEventListener('submit', async (event) => {
-                event.preventDefault(); // Prevent default form submission
+                event.preventDefault(); 
                 
                 const name = nameInput.value;
                 const message = messageInput.value;
@@ -154,16 +167,13 @@
                 try {
                     const response = await fetch(`${BACKEND_URL}/api/submit`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name, message })
                     });
                     
                     if (response.ok) {
                         console.log("Message submitted successfully!");
                         messageInput.value = ''; // Clear the message input
-                        await fetchMessages(); // Refresh the messages list
                     } else {
                         throw new Error("Failed to submit message. Please try again.");
                     }
@@ -173,9 +183,16 @@
                 }
             });
 
+            // Listen for new messages from the server in real-time
+            socket.on('new_message', (msg) => {
+                // Add the new message to the top of the list
+                messagesList.prepend(renderMessage(msg));
+            });
+
             // Initial message fetch when the page loads
             fetchMessages();
         </script>
     </div>
 </body>
 </html>
+
