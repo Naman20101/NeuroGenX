@@ -56,6 +56,63 @@
         .fade-in {
             animation: fadeIn 0.5s ease-out;
         }
+        /* Chatbot specific styles */
+        .chatbot-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 90%;
+            max-width: 400px;
+            height: 60vh;
+            background-color: #fff;
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            transform: translateY(100vh);
+            transition: transform 0.5s ease-in-out;
+            z-index: 1000;
+        }
+        .chatbot-container.active {
+            transform: translateY(0);
+        }
+        .chatbot-header {
+            background-color: #4f46e5;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 1.5rem 1.5rem 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chatbot-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background-color: #f8fafc;
+        }
+        .chatbot-input {
+            padding: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        .chatbot-bubble {
+            border-radius: 1rem;
+            padding: 0.75rem 1rem;
+            max-width: 80%;
+            margin-bottom: 1rem;
+        }
+        .chatbot-bubble.user {
+            background-color: #4f46e5;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 0.25rem;
+        }
+        .chatbot-bubble.bot {
+            background-color: #e5e7eb;
+            color: #374151;
+            margin-right: auto;
+            border-bottom-left-radius: 0.25rem;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4 md:p-8">
@@ -103,18 +160,31 @@
                 <span id="welcomeMessage" class="text-lg font-medium text-gray-700"></span>
                 <button id="logoutButton" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Logout</button>
             </div>
-            
-            <form id="messageForm" class="flex flex-col md:flex-row gap-4 mb-8">
-                <textarea id="message" name="message" rows="1" class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none" placeholder="Type your message here..." required></textarea>
-                <button type="submit" class="submit-button bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg flex-none">
-                    Send
-                </button>
-            </form>
 
-            <div class="h-96 overflow-y-auto scrollbar-thin rounded-lg border border-gray-200 p-4 bg-gray-50">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Messages</h2>
-                <div id="messagesList" class="space-y-4">
-                    <!-- Messages will be dynamically loaded here -->
+            <div class="md:flex md:space-x-8">
+                <!-- Message Section -->
+                <div class="flex-1">
+                    <form id="messageForm" class="flex flex-col md:flex-row gap-4 mb-8">
+                        <textarea id="message" name="message" rows="1" class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none" placeholder="Type your message here..." required></textarea>
+                        <button type="submit" class="submit-button bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg flex-none">
+                            Send
+                        </button>
+                    </form>
+        
+                    <div class="h-96 overflow-y-auto scrollbar-thin rounded-lg border border-gray-200 p-4 bg-gray-50">
+                        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Messages</h2>
+                        <div id="messagesList" class="space-y-4">
+                            <!-- Messages will be dynamically loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Online Users Section -->
+                <div class="md:w-1/4 mt-8 md:mt-0">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Online Users <span id="userCount" class="text-sm text-gray-500 font-normal"></span></h2>
+                    <ul id="userList" class="space-y-2 p-2 rounded-lg bg-white shadow-sm border border-gray-200">
+                        <!-- User list will be populated here -->
+                    </ul>
                 </div>
             </div>
         </div>
@@ -133,6 +203,8 @@
             const showLoginBtn = document.getElementById('showLogin');
             const showRegisterBtn = document.getElementById('showRegister');
             const welcomeMessage = document.getElementById('welcomeMessage');
+            const userCountSpan = document.getElementById('userCount');
+            const userList = document.getElementById('userList');
             const logoutButton = document.getElementById('logoutButton');
             const messageAlert = document.getElementById('messageAlert');
             
@@ -140,7 +212,41 @@
             const messagesList = document.getElementById('messagesList');
             const messageInput = document.getElementById('message');
 
+            // Chatbot UI elements
+            const chatbotContainer = document.createElement('div');
+            chatbotContainer.id = 'chatbotContainer';
+            chatbotContainer.className = 'chatbot-container hidden';
+            document.body.appendChild(chatbotContainer);
+
+            chatbotContainer.innerHTML = `
+                <header class="chatbot-header">
+                    <h3 class="text-lg font-bold">AI Assistant</h3>
+                    <button id="closeBot" class="text-xl font-bold">&times;</button>
+                </header>
+                <div id="chatbotMessages" class="chatbot-messages scrollbar-thin"></div>
+                <form id="chatbotForm" class="chatbot-input flex gap-4">
+                    <input type="text" id="chatbotInput" class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Chat with the AI...">
+                    <button type="submit" class="submit-button bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg flex-none">
+                        Send
+                    </button>
+                </form>
+            `;
+
+            const chatbotForm = document.getElementById('chatbotForm');
+            const chatbotMessages = document.getElementById('chatbotMessages');
+            const chatbotInput = document.getElementById('chatbotInput');
+            const closeBotBtn = document.getElementById('closeBot');
+
             let socket = null;
+
+            // This function is new
+            function createChatbotBubble(message, type) {
+                const bubble = document.createElement('div');
+                bubble.className = `chatbot-bubble fade-in ${type}`;
+                bubble.textContent = message;
+                chatbotMessages.appendChild(bubble);
+                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+            }
 
             function showMessage(message, type = 'info') {
                 messageAlert.textContent = message;
@@ -203,8 +309,34 @@
                 fetchMessages();
                 
                 socket = io(BACKEND_URL);
+                
+                // When a user logs in, tell the server they've joined
+                socket.emit('join', username);
+
+                // Listen for new messages from the server
                 socket.on('new_message', (msg) => {
-                    messagesList.prepend(formatAndRenderMessage(msg));
+                    // Check if the message is from the bot and the bot UI is active
+                    if (msg.name === 'Bot' && !chatbotContainer.classList.contains('hidden')) {
+                         createChatbotBubble(msg.message, 'bot');
+                    } else {
+                        messagesList.prepend(formatAndRenderMessage(msg));
+                    }
+                });
+                
+                // Listen for the updated online user list
+                socket.on('online_users', (users) => {
+                    userCountSpan.textContent = `(${users.length})`;
+                    userList.innerHTML = '';
+                    if (users.length === 0) {
+                        userList.innerHTML = '<li class="text-center text-gray-400 text-sm">No one is online.</li>';
+                    } else {
+                        users.forEach(user => {
+                            const userItem = document.createElement('li');
+                            userItem.className = 'p-2 rounded-lg bg-gray-100 font-medium text-gray-700';
+                            userItem.textContent = user;
+                            userList.appendChild(userItem);
+                        });
+                    }
                 });
             }
 
@@ -289,27 +421,67 @@
                     return;
                 }
 
-                try {
+                // Check if the message is for the bot
+                if (message.toLowerCase().startsWith('@bot ')) {
+                    chatbotContainer.classList.remove('hidden');
+                    createChatbotBubble(message.substring(5), 'user');
+                    // We don't send to the main chat, only to the bot
                     const response = await fetch(`${BACKEND_URL}/api/submit`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`
                         },
-                        body: JSON.stringify({ message })
+                        body: JSON.stringify({ message: message })
                     });
-                    
-                    if (response.ok) {
-                        messageInput.value = '';
-                    } else {
-                        const data = await response.json();
-                        showMessage(data.error || 'Failed to send message.', 'error');
+                } else {
+                    try {
+                        const response = await fetch(`${BACKEND_URL}/api/submit`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ message })
+                        });
+                        
+                        if (response.ok) {
+                            messageInput.value = '';
+                        } else {
+                            const data = await response.json();
+                            showMessage(data.error || 'Failed to send message.', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Message submission error:', error);
+                        showMessage('An error occurred while sending the message.', 'error');
                     }
-                } catch (error) {
-                    console.error('Message submission error:', error);
-                    showMessage('An error occurred while sending the message.', 'error');
                 }
             });
+
+            // Handle bot form submission
+            chatbotForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const message = chatbotInput.value;
+                if (!message) return;
+
+                createChatbotBubble(message, 'user');
+                chatbotInput.value = '';
+
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${BACKEND_URL}/api/submit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ message: `@bot ${message}` })
+                });
+            });
+
+            closeBotBtn.addEventListener('click', () => {
+                chatbotContainer.classList.add('hidden');
+            });
+
 
             logoutButton.addEventListener('click', () => {
                 localStorage.removeItem('token');
