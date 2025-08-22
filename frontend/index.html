@@ -146,7 +146,8 @@
 
         // The API key is provided by the environment
         const apiKey = "";
-        const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=" + apiKey;
+        // Use a different, more stable model to prevent the error
+        const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
 
         /**
          * Appends a new message to the chat container.
