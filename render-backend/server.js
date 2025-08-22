@@ -26,7 +26,7 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // ---------------------------
 // Replace this with your actual MongoDB connection URI.
 // Example: 'mongodb+srv://<user>:<password>@<cluster>.mongodb.net/<dbname>
-const MONGODB_URI = 'mongodb+srv://namanreddy24:<db_password>@cluster0.qyfyasp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const MONGODB_URI = 'mongodb+srv://namanreddy24:<your_password>@cluster0.qyfyasp.mongodb.net/neurogenx_db?retryWrites=true&w=majority&appName=Cluster0';
 
 // Connect to MongoDB
 mongoose.connect(MONGODB_URI)
@@ -101,6 +101,25 @@ app.get('/api/messages', async (req, res) => {
         res.status(500).json({ error: "An error occurred while retrieving messages." });
     }
 });
+
+// **NEW ENDPOINT**: Get a single message by ID
+app.get('/api/messages/:id', async (req, res) => {
+    console.log('GET request received at /api/messages/:id');
+    try {
+        const messageId = req.params.id;
+        const message = await Message.findById(messageId);
+        
+        if (!message) {
+            return res.status(404).json({ error: 'Message not found' });
+        }
+        
+        res.json(message);
+    } catch (err) {
+        console.error('Error retrieving message:', err);
+        res.status(500).json({ error: 'An error occurred while retrieving the message.' });
+    }
+});
+
 
 // ---------------------------
 // SERVER STARTUP
