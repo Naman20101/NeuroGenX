@@ -26,7 +26,7 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // ---------------------------
 // Replace this with your actual MongoDB connection URI.
 // Example: 'mongodb+srv://<user>:<password>@<cluster>.mongodb.net/<dbname>
-const MONGODB_URI = 'mongodb+srv://<user>:<password>@cluster0.abcde.mongodb.net/neurogenx_db?retryWrites=true&w=majority';
+const MONGODB_URI = 'mongodb+srv://namanreddy24:<db_password>@cluster0.qyfyasp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 
 // Connect to MongoDB
 mongoose.connect(MONGODB_URI)
