@@ -1,24 +1,29 @@
 const express = require('express');
-const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
 
+// Initialize the Express application
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware setup
-app.use(cors()); // Enables CORS for all routes
-app.use(express.json()); // Parses incoming JSON payloads
+// Serve the Swagger documentation using the YAML file
+const swaggerDocument = YAML.load('./swagger.yaml');
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// A simple GET route for the root URL
-// This will resolve the "Cannot GET /" error
+// Define the root route
 app.get('/', (req, res) => {
-  res.send('Neurogenx API is running successfully!');
+    console.log('GET request received at /');
+    res.send('Neurogenx API is running successfully!');
 });
 
-// A route to handle message requests
+// Define a simple API endpoint for a message
 app.get('/api/message', (req, res) => {
-  res.json({ message: 'Hello from the backend!' });
+    console.log('GET request received at /api/message');
+    res.json({ message: "Hello from the Neurogenx API!" });
 });
 
+// Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Swagger UI is available at http://localhost:${PORT}/docs`);
 });
