@@ -1,7 +1,6 @@
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
-const cors = require('cors'); // Import the CORS package
 
 // Initialize the Express application
 const app = express();
@@ -10,8 +9,13 @@ const PORT = process.env.PORT || 3000;
 // ---------------------------
 // MIDDLEWARE
 // ---------------------------
-// Enable CORS for all routes and origins
-app.use(cors());
+// Manually set CORS headers to allow requests from any origin.
+// This fixes the "Failed to load messages" error without requiring the 'cors' package.
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    next();
+});
 
 // Middleware to parse JSON bodies from incoming requests
 app.use(express.json());
