@@ -1,10 +1,17 @@
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
+const cors = require('cors'); // Import the CORS package
 
 // Initialize the Express application
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// ---------------------------
+// MIDDLEWARE
+// ---------------------------
+// Enable CORS for all routes and origins
+app.use(cors());
 
 // Middleware to parse JSON bodies from incoming requests
 app.use(express.json());
@@ -79,4 +86,5 @@ setTimeout(() => {
         console.log(`Swagger UI is available at http://localhost:${PORT}/docs`);
     });
 }, STARTUP_DELAY);
+
 
