@@ -7,38 +7,68 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Custom styles for animations and shadows */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-            color: #1f2937;
+            background: #e2e8f0; /* Soft gray background */
+            transition: background-color 0.3s ease;
+        }
+        .container-card {
+            background-color: #fff;
+            border-radius: 1.5rem; /* Rounded corners */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* Stronger shadow */
+        }
+        .submit-button {
+            transition: all 0.2s ease;
+        }
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.5), 0 4px 6px -2px rgba(79, 70, 229, 0.05);
+        }
+        .message-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .message-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .scrollbar-thin {
+            scrollbar-width: thin;
+            scrollbar-color: #4f46e5 #e2e8f0;
+        }
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 8px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background-color: #4f46e5;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-2xl">
-        <h1 class="text-3xl font-bold text-center text-indigo-800 mb-6">NeuroGenX Chat</h1>
-        <p class="text-center text-gray-600 mb-8">This client connects to a deployed server to send and receive messages in real-time.</p>
+<body class="min-h-screen flex items-center justify-center p-4 md:p-8">
+    <div class="container-card w-full max-w-4xl p-6 md:p-10">
+        <h1 class="text-4xl font-extrabold text-center text-indigo-700 mb-2">NeuroGenX Chat</h1>
+        <p class="text-center text-gray-500 mb-8 font-light">A chat application powered by Render & Vercel.</p>
 
         <!-- Message Submission Form -->
-        <form id="messageForm" class="flex flex-col gap-4">
-            <div class="flex flex-col">
-                <label for="name" class="font-medium text-gray-700">Your Name</label>
-                <input type="text" id="name" name="name" class="mt-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="Enter your name" required>
-            </div>
-            <div class="flex flex-col">
-                <label for="message" class="font-medium text-gray-700">Your Message</label>
-                <textarea id="message" name="message" rows="4" class="mt-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="Type your message here" required></textarea>
-            </div>
-            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-lg">Submit Message</button>
+        <form id="messageForm" class="flex flex-col md:flex-row gap-4 mb-8">
+            <input type="text" id="name" name="name" class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="Your name" required>
+            <textarea id="message" name="message" rows="1" class="flex-[2] p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none" placeholder="Type your message here..." required></textarea>
+            <button type="submit" class="submit-button bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg flex-none">
+                Send
+            </button>
         </form>
 
-        <hr class="my-8 border-t border-gray-300">
-
         <!-- Message Display Area -->
-        <div id="messagesContainer">
-            <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">Messages</h2>
+        <div class="h-96 overflow-y-auto scrollbar-thin rounded-lg border border-gray-200 p-4 bg-gray-50">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Messages</h2>
             <div id="messagesList" class="space-y-4">
                 <!-- Messages will be dynamically loaded here -->
             </div>
@@ -54,9 +84,9 @@
             const messageInput = document.getElementById('message');
 
             /**
-             * Asynchronously fetches messages from the backend API.
-             * * This function sends a GET request to the backend's /api/messages endpoint.
-             * It handles the response, parsing it as JSON, and then renders the messages
+             * Asynchronously fetches messages from the backend API and renders them.
+             * This function sends a GET request to the backend's /api/messages endpoint.
+             * It handles the response, parses it as JSON, and then renders the messages
              * onto the webpage. If an error occurs, it logs the error to the console
              * and displays a user-friendly error message on the page.
              */
@@ -70,17 +100,32 @@
                     
                     messagesList.innerHTML = ''; // Clear previous messages
                     if (messages.length === 0) {
-                        messagesList.innerHTML = '<p class="text-center text-gray-500">No messages yet. Be the first to post!</p>';
+                        messagesList.innerHTML = '<p class="text-center text-gray-500 font-medium mt-4">No messages yet. Be the first to post!</p>';
                         return;
                     }
                     
                     messages.forEach(msg => {
                         const messageElement = document.createElement('div');
-                        messageElement.className = 'bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200';
+                        messageElement.className = 'message-card bg-white p-4 rounded-xl shadow-sm border border-gray-200 animate-fade-in';
+                        
+                        let formattedDate = 'Date Unavailable';
+                        // Use a custom function to check if the date is valid and format it
+                        const date = new Date(msg.timestamp);
+                        if (!isNaN(date.getTime())) {
+                            formattedDate = date.toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: 'numeric',
+                                minute: 'numeric',
+                                hour12: true
+                            });
+                        }
+
                         messageElement.innerHTML = `
-                            <p class="font-semibold text-gray-800">${msg.name}</p>
+                            <p class="font-semibold text-gray-900">${msg.name}</p>
                             <p class="text-gray-700 mt-2">${msg.message}</p>
-                            <p class="text-xs text-gray-400 mt-2">${new Date(msg.timestamp).toLocaleString()}</p>
+                            <p class="text-xs text-gray-400 mt-2">${formattedDate}</p>
                         `;
                         messagesList.appendChild(messageElement);
                     });
@@ -92,7 +137,7 @@
 
             /**
              * Handles the form submission to send a new message.
-             * * This function prevents the default form submission, creates a message object
+             * This function prevents the default form submission, creates a message object
              * from the form input, and sends it to the backend via a POST request.
              * Upon successful submission, it logs a success message, clears the input,
              * and calls fetchMessages() to update the list on the page. It includes
@@ -134,4 +179,3 @@
     </div>
 </body>
 </html>
-
