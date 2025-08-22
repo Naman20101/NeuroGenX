@@ -35,15 +35,14 @@ app.post('/api/submit', (req, res) => {
     res.json({ confirmation: `Hello ${name}, your message "${message}" has been received!` });
 });
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-    console.log(`Swagger UI is available at http://localhost:${PORT}/docs`);
-});
+// Add a delay before starting the server to avoid EADDRINUSE errors on Render.
+// This gives the previous process time to shut down and release the port.
+const STARTUP_DELAY = 5000; // 5-second delay
 
+setTimeout(() => {
+    app.listen(PORT, () => {
+        console.log(`Server is running on http://localhost:${PORT}`);
+        console.log(`Swagger UI is available at http://localhost:${PORT}/docs`);
+    });
+}, STARTUP_DELAY);
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-    console.log(`Swagger UI is available at http://localhost:${PORT}/docs`);
-});
