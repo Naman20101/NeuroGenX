@@ -13,6 +13,18 @@ app.use(express.json());
 const swaggerDocument = YAML.load('./swagger.yaml');
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+// ---------------------------
+// IN-MEMORY DATA STORE
+// ---------------------------
+// This array will act as our temporary database.
+// Data stored here will be lost when the server restarts.
+let messages = [];
+let messageIdCounter = 0;
+
+// ---------------------------
+// API ENDPOINTS
+// ---------------------------
+
 // Define the root route
 app.get('/', (req, res) => {
     console.log('GET request received at /');
@@ -25,18 +37,40 @@ app.get('/api/message', (req, res) => {
     res.json({ message: "Hello from the Neurogenx API!" });
 });
 
-// Define a new POST endpoint to handle user data
+// Define a POST endpoint to save user data to the in-memory store
 app.post('/api/submit', (req, res) => {
     console.log('POST request received at /api/submit');
     const { name, message } = req.body;
     if (!name || !message) {
         return res.status(400).json({ error: "Name and message are required." });
     }
-    res.json({ confirmation: `Hello ${name}, your message "${message}" has been received!` });
+
+    // Create a new message object with a unique ID and date
+    const newMessage = {
+        _id: ++messageIdCounter,
+        name,
+        message,
+        date: new Date()
+    };
+    
+    // Save the message to our in-memory array
+    messages.push(newMessage);
+    console.log('Message saved to in-memory store:', newMessage);
+
+    res.json({ confirmation: `Hello ${name}, your message "${message}" has been received and saved!` });
 });
 
+// Define a new GET endpoint to retrieve all messages from the in-memory store
+app.get('/api/messages', (req, res) => {
+    console.log('GET request received at /api/messages');
+    // Return the messages from our array
+    res.json(messages);
+});
+
+// ---------------------------
+// SERVER STARTUP
+// ---------------------------
 // Add a delay before starting the server to avoid EADDRINUSE errors on Render.
-// This gives the previous process time to shut down and release the port.
 const STARTUP_DELAY = 5000; // 5-second delay
 
 setTimeout(() => {
