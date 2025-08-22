@@ -1,16 +1,13 @@
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
+const mongoose = require('mongoose');
 
 // Initialize the Express application
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ---------------------------
-// MIDDLEWARE
-// ---------------------------
 // Manually set CORS headers to allow requests from any origin.
-// This fixes the "Failed to load messages" error without requiring the 'cors' package.
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
@@ -25,12 +22,35 @@ const swaggerDocument = YAML.load('./swagger.yaml');
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // ---------------------------
-// IN-MEMORY DATA STORE
+// MONGO DB CONNECTION AND SETUP
 // ---------------------------
-// This array will act as our temporary database.
-// Data stored here will be lost when the server restarts.
-let messages = [];
-let messageIdCounter = 0;
+// Replace this with your actual MongoDB connection URI.
+// Example: 'mongodb+srv://<user>:<password>@<cluster>.mongodb.net/<dbname>
+const MONGODB_URI = 'mongodb+srv://<user>:<password>@cluster0.abcde.mongodb.net/neurogenx_db?retryWrites=true&w=majority';
+
+// Connect to MongoDB
+mongoose.connect(MONGODB_URI)
+    .then(() => console.log('Successfully connected to MongoDB!'))
+    .catch(err => console.error('Could not connect to MongoDB...', err));
+
+// Define the schema for a Message
+const messageSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true
+    },
+    message: {
+        type: String,
+        required: true
+    },
+    date: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+// Create the Message model from the schema
+const Message = mongoose.model('Message', messageSchema);
 
 // ---------------------------
 // API ENDPOINTS
@@ -48,41 +68,44 @@ app.get('/api/message', (req, res) => {
     res.json({ message: "Hello from the Neurogenx API!" });
 });
 
-// Define a POST endpoint to save user data to the in-memory store
-app.post('/api/submit', (req, res) => {
+// Define a POST endpoint to save user data to the database
+app.post('/api/submit', async (req, res) => {
     console.log('POST request received at /api/submit');
     const { name, message } = req.body;
     if (!name || !message) {
         return res.status(400).json({ error: "Name and message are required." });
     }
 
-    // Create a new message object with a unique ID and date
-    const newMessage = {
-        _id: ++messageIdCounter,
-        name,
-        message,
-        date: new Date()
-    };
-    
-    // Save the message to our in-memory array
-    messages.push(newMessage);
-    console.log('Message saved to in-memory store:', newMessage);
-
-    res.json({ confirmation: `Hello ${name}, your message "${message}" has been received and saved!` });
+    try {
+        // Create a new message document
+        const newMessage = new Message({ name, message });
+        // Save the document to the database
+        await newMessage.save();
+        console.log('Message saved to DB:', newMessage);
+        res.json({ confirmation: `Hello ${name}, your message "${message}" has been received and saved!` });
+    } catch (err) {
+        console.error('Error saving message:', err);
+        res.status(500).json({ error: "An error occurred while saving the message." });
+    }
 });
 
-// Define a new GET endpoint to retrieve all messages from the in-memory store
-app.get('/api/messages', (req, res) => {
+// Define a new GET endpoint to retrieve all messages from the database
+app.get('/api/messages', async (req, res) => {
     console.log('GET request received at /api/messages');
-    // Return the messages from our array
-    res.json(messages);
+    try {
+        // Find all documents in the 'messages' collection
+        const messages = await Message.find().sort({ date: -1 }); // Sort by newest first
+        res.json(messages);
+    } catch (err) {
+        console.error('Error retrieving messages:', err);
+        res.status(500).json({ error: "An error occurred while retrieving messages." });
+    }
 });
 
 // ---------------------------
 // SERVER STARTUP
 // ---------------------------
-// Add a delay before starting the server to avoid EADDRINUSE errors on Render.
-const STARTUP_DELAY = 5000; // 5-second delay
+const STARTUP_DELAY = 5000;
 
 setTimeout(() => {
     app.listen(PORT, () => {
