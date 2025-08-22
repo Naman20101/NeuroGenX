@@ -1,0 +1,47 @@
+openapi: 3.0.0
+info:
+  title: Neurogenx API
+  description: A simple API for a Neurogenx application.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+tags:
+  - name: API Endpoints
+    description: Core API endpoints for the Neurogenx application
+
+paths:
+  /:
+    get:
+      tags:
+        - API Endpoints
+      summary: Get API status
+      description: Returns a success message to indicate the API is running.
+      responses:
+        '200':
+          description: API is running successfully.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Neurogenx API is running successfully!"
+  
+  /api/message:
+    get:
+      tags:
+        - API Endpoints
+      summary: Get a welcome message
+      description: Returns a simple JSON message.
+      responses:
+        '200':
+          description: A JSON message is returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Hello from the Neurogenx API!"
