@@ -45,3 +45,44 @@ paths:
                   message:
                     type: string
                     example: "Hello from the Neurogenx API!"
+
+  /api/submit:
+    post:
+      tags:
+        - API Endpoints
+      summary: Submit a message
+      description: Accepts a user's name and message and returns a confirmation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Jane Doe"
+                message:
+                  type: string
+                  example: "This is my first post request!"
+      responses:
+        '200':
+          description: Message successfully received.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  confirmation:
+                    type: string
+                    example: "Hello Jane Doe, your message \"This is my first post request!\" has been received!"
+        '400':
+          description: Bad request. Name and message are required.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Name and message are required."
