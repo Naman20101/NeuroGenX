@@ -116,6 +116,39 @@ const auth = (req, res, next) => {
 // ---------------------------
 // CONVERSATIONAL AGENT LOGIC
 // ---------------------------
+
+// A new function to handle API calls with exponential backoff
+async function callApiWithRetry(url, options, retries = 5, initialDelay = 1000) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(url, options);
+            if (response.ok) {
+                return response;
+            } else {
+                console.error(`Attempt ${i + 1} failed with status: ${response.status}`);
+                if (response.status === 429 || response.status >= 500) {
+                    const delay = initialDelay * Math.pow(2, i);
+                    console.log(`Retrying in ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                } else {
+                    // Don't retry on client errors
+                    return response;
+                }
+            }
+        } catch (error) {
+            console.error(`Attempt ${i + 1} failed with network error:`, error.message);
+            if (i < retries - 1) {
+                const delay = initialDelay * Math.pow(2, i);
+                console.log(`Retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+                throw error;
+            }
+        }
+    }
+    throw new Error('All retry attempts failed.');
+}
+
 async function getBotResponse(prompt) {
     try {
         const apiKey = "";
@@ -127,7 +160,7 @@ async function getBotResponse(prompt) {
             }]
         };
 
-        const response = await fetch(apiUrl, {
+        const response = await callApiWithRetry(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -141,6 +174,7 @@ async function getBotResponse(prompt) {
         const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (!text) {
+            console.error("API response structure was unexpected:", JSON.stringify(result, null, 2));
             throw new Error("No text found in API response.");
         }
         
@@ -311,5 +345,6 @@ setTimeout(() => {
         console.log(`Server is listening at http://localhost:${PORT}`);
     });
 }, STARTUP_DELAY);
+
 
 
