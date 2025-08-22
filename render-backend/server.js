@@ -43,8 +43,12 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key';
 
 if (MONGODB_URI) {
     mongoose.connect(MONGODB_URI)
-        .then(() => console.log('Successfully connected to MongoDB!'))
-        .catch(err => console.error('Could not connect to MongoDB...', err));
+        .then(() => {
+            console.log('Successfully connected to MongoDB!');
+        })
+        .catch(err => {
+            console.error('Could not connect to MongoDB...', err);
+        });
 } else {
     console.error('MONGODB_URI is not set. Please add it to your environment variables.');
 }
@@ -104,6 +108,7 @@ const auth = (req, res, next) => {
         req.user = decoded;
         next();
     } catch (error) {
+        console.error('Authentication error: Invalid token.', error);
         res.status(401).json({ error: 'Invalid token.' });
     }
 };
@@ -123,13 +128,16 @@ io.on('connection', (socket) => {
 // ---------------------------
 app.post('/api/register', async (req, res) => {
     const { username, password } = req.body;
+    console.log(`Received registration request for username: ${username}`);
     try {
         if (!username || !password) {
+            console.log('Registration failed: Missing username or password.');
             return res.status(400).json({ error: 'Username and password are required.' });
         }
         
         const existingUser = await User.findOne({ username });
         if (existingUser) {
+            console.log(`Registration failed: Username '${username}' already exists.`);
             return res.status(400).json({ error: 'Username already taken.' });
         }
 
@@ -139,6 +147,7 @@ app.post('/api/register', async (req, res) => {
         const newUser = new User({ username, password: hashedPassword });
         await newUser.save();
 
+        console.log(`User '${username}' registered successfully!`);
         res.status(201).json({ message: 'User registered successfully!' });
     } catch (err) {
         console.error('Error during registration:', err);
@@ -148,22 +157,27 @@ app.post('/api/register', async (req, res) => {
 
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
+    console.log(`Received login request for username: ${username}`);
     try {
         if (!username || !password) {
+            console.log('Login failed: Missing username or password.');
             return res.status(400).json({ error: 'Username and password are required.' });
         }
 
         const user = await User.findOne({ username });
         if (!user) {
+            console.log('Login failed: Invalid username or password.');
             return res.status(400).json({ error: 'Invalid username or password.' });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
+            console.log('Login failed: Password mismatch.');
             return res.status(400).json({ error: 'Invalid username or password.' });
         }
 
         const token = jwt.sign({ userId: user._id, username: user.username }, JWT_SECRET, { expiresIn: '1h' });
+        console.log(`User '${username}' logged in successfully.`);
         res.json({ token, username });
     } catch (err) {
         console.error('Error during login:', err);
@@ -217,6 +231,4 @@ setTimeout(() => {
         console.log(`Server is listening at http://localhost:${PORT}`);
     });
 }, STARTUP_DELAY);
-
-
 
