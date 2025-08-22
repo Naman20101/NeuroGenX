@@ -150,6 +150,7 @@ async function callApiWithRetry(url, options, retries = 5, initialDelay = 1000) 
 }
 
 async function getBotResponse(prompt) {
+    console.log("Attempting to get bot response for prompt:", prompt);
     try {
         const apiKey = "";
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
@@ -167,6 +168,7 @@ async function getBotResponse(prompt) {
         });
 
         if (!response.ok) {
+            console.error(`API call failed with status: ${response.status}, response:`, await response.text());
             throw new Error(`API call failed with status: ${response.status}`);
         }
 
@@ -182,7 +184,7 @@ async function getBotResponse(prompt) {
 
     } catch (err) {
         console.error("Error calling Gemini API:", err);
-        return "Sorry, I am having trouble processing that request right now.";
+        return "Sorry, I am having trouble processing that request right now. I will let you know once I'm up and running again.";
     }
 }
 
@@ -299,8 +301,8 @@ app.post('/api/submit', auth, async (req, res) => {
 
         // Check if the message is for the bot
         if (message.toLowerCase().startsWith('@bot ')) {
+            console.log(`User message starts with '@bot', triggering bot response.`);
             const botPrompt = message.substring(5);
-            console.log(`Calling bot with prompt: ${botPrompt}`);
             const botResponse = await getBotResponse(botPrompt);
 
             // Save and broadcast the bot's response
@@ -315,6 +317,9 @@ app.post('/api/submit', auth, async (req, res) => {
                 message: botMessage.message,
                 timestamp: botMessage.date
             });
+            console.log(`Bot responded to prompt: "${botPrompt}"`);
+        } else {
+             console.log(`User message does not start with '@bot', skipping bot response.`);
         }
 
         res.status(201).json({ message: 'Message submitted successfully!' });
@@ -345,6 +350,7 @@ setTimeout(() => {
         console.log(`Server is listening at http://localhost:${PORT}`);
     });
 }, STARTUP_DELAY);
+
 
 
 
