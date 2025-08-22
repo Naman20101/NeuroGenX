@@ -118,8 +118,11 @@ const auth = (req, res, next) => {
 // ---------------------------
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
+    io.emit('user_count', io.engine.clientsCount);
+    
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
+        io.emit('user_count', io.engine.clientsCount);
     });
 });
 
@@ -231,4 +234,3 @@ setTimeout(() => {
         console.log(`Server is listening at http://localhost:${PORT}`);
     });
 }, STARTUP_DELAY);
-
