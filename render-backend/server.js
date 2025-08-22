@@ -116,13 +116,31 @@ const auth = (req, res, next) => {
 // ---------------------------
 // SOCKET.IO CONNECTION HANDLING
 // ---------------------------
+
+// A map to store active sockets and their usernames
+const connectedUsers = new Map();
+
+// Helper function to broadcast the updated user list
+const broadcastUserList = () => {
+    const users = Array.from(connectedUsers.values());
+    io.emit('online_users', users);
+};
+
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
-    io.emit('user_count', io.engine.clientsCount);
     
+    // Listen for the 'join' event from the client to get their username
+    socket.on('join', (username) => {
+        connectedUsers.set(socket.id, username);
+        console.log(`User '${username}' joined with socket ID: ${socket.id}`);
+        broadcastUserList();
+    });
+
     socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
-        io.emit('user_count', io.engine.clientsCount);
+        const username = connectedUsers.get(socket.id);
+        connectedUsers.delete(socket.id);
+        console.log(`User '${username}' disconnected from socket ID: ${socket.id}`);
+        broadcastUserList();
     });
 });
 
@@ -234,3 +252,4 @@ setTimeout(() => {
         console.log(`Server is listening at http://localhost:${PORT}`);
     });
 }, STARTUP_DELAY);
+
