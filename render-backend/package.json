@@ -1,18 +1,15 @@
 {
   "name": "neurogenx-api",
   "version": "1.0.0",
-  "description": "A simple Node.js API with Express",
   "main": "server.js",
+  "license": "Apache-2.0",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.19.2",
-    "swagger-ui-express": "^5.0.1",
-    "yamljs": "^0.3.0"
-  },
-  "files": [
-    "server.js",
-    "swagger.yaml"
-  ]
+    "yamljs": "^0.3.0",
+    "swagger-ui-express": "^5.0.0",
+    "mongoose": "^8.4.0"
+  }
 }
