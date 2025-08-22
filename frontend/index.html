@@ -49,6 +49,24 @@
         const messageForm = document.getElementById('messageForm');
 
         /**
+         * Fetches a single message from the API by its ID and shows it in an alert.
+         * @param {string} id - The unique ID of the message.
+         */
+        async function fetchSingleMessage(id) {
+            try {
+                const response = await fetch(`${API_URL}/api/messages/${id}`);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const message = await response.json();
+                alert(`Message Details:\n\nName: ${message.name}\nMessage: ${message.message}\nDate: ${new Date(message.date).toLocaleString()}`);
+            } catch (error) {
+                console.error('Error fetching single message:', error);
+                alert('Failed to retrieve message. Please check the console for details.');
+            }
+        }
+
+        /**
          * Fetches all messages from the API and renders them on the page.
          */
         async function fetchMessages() {
@@ -78,11 +96,16 @@
             
             messages.forEach(msg => {
                 const messageCard = document.createElement('div');
-                messageCard.className = 'bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200';
+                messageCard.className = 'bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center';
                 messageCard.innerHTML = `
-                    <p class="font-bold text-indigo-600">${msg.name}</p>
-                    <p class="mt-1 text-gray-800">${msg.message}</p>
-                    <p class="mt-2 text-sm text-gray-400">${new Date(msg.date).toLocaleString()}</p>
+                    <div>
+                        <p class="font-bold text-indigo-600">${msg.name}</p>
+                        <p class="mt-1 text-gray-800">${msg.message}</p>
+                        <p class="mt-2 text-sm text-gray-400">${new Date(msg.date).toLocaleString()}</p>
+                    </div>
+                    <button class="bg-indigo-500 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-600" onclick="fetchSingleMessage('${msg._id}')">
+                        View
+                    </button>
                 `;
                 messagesList.appendChild(messageCard);
             });
@@ -125,3 +148,4 @@
     </script>
 </body>
 </html>
+
