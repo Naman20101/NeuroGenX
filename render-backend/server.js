@@ -4,8 +4,8 @@ const YAML = require('yamljs');
 const mongoose = require('mongoose');
 const http = require('http');
 const { Server } = require('socket.io');
-const bcrypt = require('bcryptjs'); // For hashing passwords
-const jwt = require('jsonwebtoken'); // For creating secure tokens
+const bcrypt = require('bcryptjs'); 
+const jwt = require('jsonwebtoken');
 
 // Initialize the Express application
 const app = express();
@@ -22,29 +22,25 @@ const io = new Server(server, {
     }
 });
 
-// Manually set CORS headers for Express routes to allow requests from any origin.
+// Manually set CORS headers for Express routes
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     next();
 });
 
-// Middleware to parse JSON bodies from incoming requests
 app.use(express.json());
 
-// Serve the Swagger documentation using the YAML file
+// Serve the Swagger documentation
 const swaggerDocument = YAML.load('./swagger.yaml');
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // ---------------------------
-// MONGO DB CONNECTION AND SETUP
+// MONGO DB CONNECTION
 // ---------------------------
-// Use an environment variable for the MongoDB connection URI for security.
 const MONGODB_URI = process.env.MONGODB_URI;
-// Use an environment variable for the JWT secret key
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key'; // Use a default key for development
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key';
 
-// Connect to MongoDB
 if (MONGODB_URI) {
     mongoose.connect(MONGODB_URI)
         .then(() => console.log('Successfully connected to MongoDB!'))
@@ -74,7 +70,7 @@ const User = mongoose.model('User', userSchema);
 // MESSAGE SCHEMA AND MODEL
 // ---------------------------
 const messageSchema = new mongoose.Schema({
-    userId: { // Link message to a specific user
+    userId: {
         type: mongoose.Schema.Types.ObjectId,
         required: true
     },
@@ -105,7 +101,7 @@ const auth = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded; // Add the decoded user payload to the request
+        req.user = decoded;
         next();
     } catch (error) {
         res.status(401).json({ error: 'Invalid token.' });
@@ -125,8 +121,6 @@ io.on('connection', (socket) => {
 // ---------------------------
 // API ENDPOINTS
 // ---------------------------
-
-// REGISTER route
 app.post('/api/register', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -134,17 +128,14 @@ app.post('/api/register', async (req, res) => {
             return res.status(400).json({ error: 'Username and password are required.' });
         }
         
-        // Check if user already exists
         const existingUser = await User.findOne({ username });
         if (existingUser) {
             return res.status(400).json({ error: 'Username already taken.' });
         }
 
-        // Hash the password for security
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Create new user
         const newUser = new User({ username, password: hashedPassword });
         await newUser.save();
 
@@ -155,7 +146,6 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// LOGIN route
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -163,21 +153,17 @@ app.post('/api/login', async (req, res) => {
             return res.status(400).json({ error: 'Username and password are required.' });
         }
 
-        // Find the user by username
         const user = await User.findOne({ username });
         if (!user) {
             return res.status(400).json({ error: 'Invalid username or password.' });
         }
 
-        // Compare the submitted password with the hashed password in the database
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ error: 'Invalid username or password.' });
         }
 
-        // Create and sign a JWT token
         const token = jwt.sign({ userId: user._id, username: user.username }, JWT_SECRET, { expiresIn: '1h' });
-
         res.json({ token, username });
     } catch (err) {
         console.error('Error during login:', err);
@@ -185,25 +171,18 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-
-// Define a POST endpoint to save user data to the database
-// We now use the 'auth' middleware to protect this route
 app.post('/api/submit', auth, async (req, res) => {
-    console.log('POST request received at /api/submit');
     const { message } = req.body;
-    const { userId, username } = req.user; // Get user info from the JWT token
+    const { userId, username } = req.user;
     
     if (!message) {
         return res.status(400).json({ error: "Message is required." });
     }
 
     try {
-        // Create a new message document
         const newMessage = new Message({ userId, name: username, message });
         await newMessage.save();
-        console.log('Message saved to DB:', newMessage);
 
-        // Emit the new message to all connected clients
         io.emit('new_message', {
             name: newMessage.name,
             message: newMessage.message,
@@ -217,9 +196,7 @@ app.post('/api/submit', auth, async (req, res) => {
     }
 });
 
-// Define a new GET endpoint to retrieve all messages from the database
 app.get('/api/messages', async (req, res) => {
-    console.log('GET request received at /api/messages');
     try {
         const messages = await Message.find().sort({ date: -1 });
         const formattedMessages = messages.map(msg => ({
@@ -234,16 +211,12 @@ app.get('/api/messages', async (req, res) => {
     }
 });
 
-
-// ---------------------------
-// SERVER STARTUP
-// ---------------------------
 const STARTUP_DELAY = 5000;
-
 setTimeout(() => {
     server.listen(PORT, () => {
         console.log(`Server is listening at http://localhost:${PORT}`);
     });
 }, STARTUP_DELAY);
+
 
 
