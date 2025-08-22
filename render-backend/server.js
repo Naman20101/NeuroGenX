@@ -1,20 +1,24 @@
 const express = require('express');
 const cors = require('cors');
+
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Use the PORT environment variable provided by Render, or a default for local development.
-const PORT = process.env.PORT || 5000;
+// Middleware setup
+app.use(cors()); // Enables CORS for all routes
+app.use(express.json()); // Parses incoming JSON payloads
 
-// Enable CORS for all origins. This is crucial for the frontend to be able to
-// make requests from a different domain (Vercel).
-app.use(cors());
-
-// Define a simple API endpoint
-app.get('/api/message', (req, res) => {
-  res.json({ message: 'Hello from the Node.js backend on Render!' });
+// A simple GET route for the root URL
+// This will resolve the "Cannot GET /" error
+app.get('/', (req, res) => {
+  res.send('Neurogenx API is running successfully!');
 });
 
-// Start the server
+// A route to handle message requests
+app.get('/api/message', (req, res) => {
+  res.json({ message: 'Hello from the backend!' });
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
