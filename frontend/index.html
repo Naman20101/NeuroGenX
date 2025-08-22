@@ -63,6 +63,9 @@
         <h1 class="text-4xl font-extrabold text-center text-indigo-700 mb-2">NeuroGenX Chat</h1>
         <p class="text-center text-gray-500 mb-8 font-light">A chat application powered by Render & Vercel.</p>
 
+        <!-- Message Alert Area -->
+        <div id="messageAlert" class="mb-4 p-4 rounded-lg text-center font-medium hidden"></div>
+
         <!-- Authentication Forms -->
         <div id="authContainer">
             <div id="loginFormContainer" class="mb-6">
@@ -131,12 +134,25 @@
             const showRegisterBtn = document.getElementById('showRegister');
             const welcomeMessage = document.getElementById('welcomeMessage');
             const logoutButton = document.getElementById('logoutButton');
+            const messageAlert = document.getElementById('messageAlert');
             
             const messageForm = document.getElementById('messageForm');
             const messagesList = document.getElementById('messagesList');
             const messageInput = document.getElementById('message');
 
             let socket = null;
+
+            function showMessage(message, type = 'info') {
+                messageAlert.textContent = message;
+                messageAlert.classList.remove('hidden', 'bg-red-200', 'text-red-800', 'bg-green-200', 'text-green-800', 'bg-blue-200', 'text-blue-800');
+                if (type === 'error') {
+                    messageAlert.classList.add('bg-red-200', 'text-red-800');
+                } else if (type === 'success') {
+                    messageAlert.classList.add('bg-green-200', 'text-green-800');
+                } else {
+                    messageAlert.classList.add('bg-blue-200', 'text-blue-800');
+                }
+            }
 
             function formatAndRenderMessage(msg) {
                 const messageElement = document.createElement('div');
@@ -176,7 +192,7 @@
                     })
                     .catch(error => {
                         console.error('Error retrieving messages:', error);
-                        messagesList.innerHTML = '<p class="text-center text-red-500">Failed to load messages. Please check the console for details.</p>';
+                        showMessage('Failed to load messages. Please check the console for details.', 'error');
                     });
             }
 
@@ -219,18 +235,20 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username, password })
                     });
-                    const data = await response.json();
+                    
                     if (response.ok) {
+                        const data = await response.json();
                         localStorage.setItem('token', data.token);
                         localStorage.setItem('username', data.username);
                         showChatUI(data.username);
                         loginForm.reset();
                     } else {
-                        alert(data.error || 'Login failed.');
+                        const data = await response.json();
+                        showMessage(data.error || 'Login failed.', 'error');
                     }
                 } catch (error) {
                     console.error('Login error:', error);
-                    alert('An error occurred during login. Please try again.');
+                    showMessage('An error occurred during login. Please try again.', 'error');
                 }
             });
 
@@ -245,17 +263,19 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username, password })
                     });
-                    const data = await response.json();
+
                     if (response.ok) {
-                        alert('Registration successful! You can now log in.');
-                        showLoginBtn.click();
+                        showMessage('Registration successful! You can now log in.', 'success');
+                        loginFormContainer.classList.remove('hidden');
+                        registerFormContainer.classList.add('hidden');
                         registerForm.reset();
                     } else {
-                        alert(data.error || 'Registration failed.');
+                        const data = await response.json();
+                        showMessage(data.error || 'Registration failed.', 'error');
                     }
                 } catch (error) {
                     console.error('Registration error:', error);
-                    alert('An error occurred during registration. Please try again.');
+                    showMessage('An error occurred during registration. Please try again.', 'error');
                 }
             });
 
@@ -265,7 +285,7 @@
                 const token = localStorage.getItem('token');
 
                 if (!token) {
-                    alert('You must be logged in to send a message.');
+                    showMessage('You must be logged in to send a message.', 'error');
                     return;
                 }
 
@@ -283,11 +303,11 @@
                         messageInput.value = '';
                     } else {
                         const data = await response.json();
-                        alert(data.error || 'Failed to send message.');
+                        showMessage(data.error || 'Failed to send message.', 'error');
                     }
                 } catch (error) {
                     console.error('Message submission error:', error);
-                    alert('An error occurred while sending the message.');
+                    showMessage('An error occurred while sending the message.', 'error');
                 }
             });
 
@@ -301,12 +321,14 @@
                 e.preventDefault();
                 loginFormContainer.classList.add('hidden');
                 registerFormContainer.classList.remove('hidden');
+                messageAlert.classList.add('hidden');
             });
 
             showLoginBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 registerFormContainer.classList.add('hidden');
                 loginFormContainer.classList.remove('hidden');
+                messageAlert.classList.add('hidden');
             });
         </script>
     </div>
