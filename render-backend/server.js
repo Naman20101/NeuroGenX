@@ -2,12 +2,26 @@ const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const mongoose = require('mongoose');
+const http = require('http'); // Import Node.js http module
+const { Server } = require('socket.io'); // Import Socket.IO Server
 
 // Initialize the Express application
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Manually set CORS headers to allow requests from any origin.
+// Create a new HTTP server and pass the Express app to it
+const server = http.createServer(app);
+
+// Initialize Socket.IO and attach it to the HTTP server
+// The cors configuration allows connections from your Vercel frontend
+const io = new Server(server, {
+    cors: {
+        origin: "*", // Adjust to your Vercel URL for production
+        methods: ["GET", "POST"]
+    }
+});
+
+// Manually set CORS headers for Express routes to allow requests from any origin.
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
@@ -18,6 +32,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 // Serve the Swagger documentation using the YAML file
+// This part is unchanged and can be removed if not needed later
 const swaggerDocument = YAML.load('./swagger.yaml');
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
@@ -35,7 +50,6 @@ if (MONGODB_URI) {
 } else {
     console.error('MONGODB_URI is not set. Please add it to your environment variables.');
 }
-
 
 // Define the schema for a Message
 const messageSchema = new mongoose.Schema({
@@ -55,6 +69,19 @@ const messageSchema = new mongoose.Schema({
 
 // Create the Message model from the schema
 const Message = mongoose.model('Message', messageSchema);
+
+// ---------------------------
+// SOCKET.IO CONNECTION HANDLING
+// ---------------------------
+io.on('connection', (socket) => {
+    console.log('A user connected:', socket.id);
+    // You can emit initial data here if needed
+    // For example: io.emit('message', "A new user has joined the chat.");
+    
+    socket.on('disconnect', () => {
+        console.log('User disconnected:', socket.id);
+    });
+});
 
 // ---------------------------
 // API ENDPOINTS
@@ -81,12 +108,18 @@ app.post('/api/submit', async (req, res) => {
     }
 
     try {
-        // Create a new message document
         const newMessage = new Message({ name, message });
-        // Save the document to the database
         await newMessage.save();
         console.log('Message saved to DB:', newMessage);
-        res.json({ confirmation: `Hello ${name}, your message "${message}" has been received and saved!` });
+
+        // Emit the new message to all connected clients
+        io.emit('new_message', {
+            name: newMessage.name,
+            message: newMessage.message,
+            timestamp: newMessage.date
+        });
+
+        res.status(201).json({ message: 'Message submitted successfully!' });
     } catch (err) {
         console.error('Error saving message:', err);
         res.status(500).json({ error: "An error occurred while saving the message." });
@@ -97,16 +130,12 @@ app.post('/api/submit', async (req, res) => {
 app.get('/api/messages', async (req, res) => {
     console.log('GET request received at /api/messages');
     try {
-        // Find all documents in the 'messages' collection and sort by newest first
         const messages = await Message.find().sort({ date: -1 });
-        
-        // Format the messages to match the frontend's expected format
         const formattedMessages = messages.map(msg => ({
             name: msg.name,
             message: msg.message,
-            timestamp: msg.date, // The key change: rename 'date' to 'timestamp'
+            timestamp: msg.date,
         }));
-        
         res.json(formattedMessages);
     } catch (err) {
         console.error('Error retrieving messages:', err);
@@ -139,9 +168,10 @@ app.get('/api/messages/:id', async (req, res) => {
 const STARTUP_DELAY = 5000;
 
 setTimeout(() => {
-    app.listen(PORT, () => {
-        console.log(`Server is running on http://localhost:${PORT}`);
+    server.listen(PORT, () => { // Use the HTTP server to listen
+        console.log(`Server is listening at http://localhost:${PORT}`);
         console.log(`Swagger UI is available at http://localhost:${PORT}/docs`);
     });
 }, STARTUP_DELAY);
+
 
