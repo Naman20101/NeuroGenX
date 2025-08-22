@@ -114,6 +114,45 @@ const auth = (req, res, next) => {
 };
 
 // ---------------------------
+// CONVERSATIONAL AGENT LOGIC
+// ---------------------------
+async function getBotResponse(prompt) {
+    try {
+        const apiKey = "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+        const payload = {
+            contents: [{
+                role: "user",
+                parts: [{ text: prompt }]
+            }]
+        };
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error(`API call failed with status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!text) {
+            throw new Error("No text found in API response.");
+        }
+        
+        return text;
+
+    } catch (err) {
+        console.error("Error calling Gemini API:", err);
+        return "Sorry, I am having trouble processing that request right now.";
+    }
+}
+
+// ---------------------------
 // SOCKET.IO CONNECTION HANDLING
 // ---------------------------
 
@@ -224,6 +263,26 @@ app.post('/api/submit', auth, async (req, res) => {
             timestamp: newMessage.date
         });
 
+        // Check if the message is for the bot
+        if (message.toLowerCase().startsWith('@bot ')) {
+            const botPrompt = message.substring(5);
+            console.log(`Calling bot with prompt: ${botPrompt}`);
+            const botResponse = await getBotResponse(botPrompt);
+
+            // Save and broadcast the bot's response
+            const botMessage = new Message({
+                userId: null, // The bot doesn't have a user ID
+                name: 'Bot',
+                message: botResponse
+            });
+            await botMessage.save();
+            io.emit('new_message', {
+                name: botMessage.name,
+                message: botMessage.message,
+                timestamp: botMessage.date
+            });
+        }
+
         res.status(201).json({ message: 'Message submitted successfully!' });
     } catch (err) {
         console.error('Error saving message:', err);
@@ -252,4 +311,5 @@ setTimeout(() => {
         console.log(`Server is listening at http://localhost:${PORT}`);
     });
 }, STARTUP_DELAY);
+
 
